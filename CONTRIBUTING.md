@@ -7,7 +7,7 @@ anything beyond a typo or a test.
 ## Setup
 
 ```bash
-git clone https://github.com/ceylonic/ceylonic.git
+git clone https://github.com/ChamathDilshanC/ceylonic.git
 cd ceylonic
 npm install
 ```

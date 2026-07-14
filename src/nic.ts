@@ -5,7 +5,7 @@
  *  - Old format: 9 digits + `V`/`X`, e.g. `"853400070V"`.
  *  - New format: 12 digits, e.g. `"198534000070"`.
  *
- * See {@link https://github.com/ceylonic/ceylonic/blob/main/ARCHITECTURE.md | ARCHITECTURE.md}
+ * See {@link https://github.com/ChamathDilshanC/ceylonic/blob/main/ARCHITECTURE.md | ARCHITECTURE.md}
  * for the full encoding scheme (day-of-year table, gender offset, the fixed
  * Feb-29 rule, and the new-format serial/marker-digit layout).
  *

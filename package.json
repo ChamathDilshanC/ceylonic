@@ -12,13 +12,13 @@
     "validator",
     "typescript"
   ],
-  "homepage": "https://github.com/ceylonic/ceylonic#readme",
+  "homepage": "https://github.com/ChamathDilshanC/ceylonic#readme",
   "bugs": {
-    "url": "https://github.com/ceylonic/ceylonic/issues"
+    "url": "https://github.com/ChamathDilshanC/ceylonic/issues"
   },
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/ceylonic/ceylonic.git"
+    "url": "git+https://github.com/ChamathDilshanC/ceylonic.git"
   },
   "license": "MIT",
   "author": "",

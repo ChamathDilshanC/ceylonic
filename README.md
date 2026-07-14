@@ -1,6 +1,6 @@
 # ceylonic 🇱🇰
 
-[![CI](https://github.com/ceylonic/ceylonic/actions/workflows/ci.yml/badge.svg)](https://github.com/ceylonic/ceylonic/actions/workflows/ci.yml)
+[![CI](https://github.com/ChamathDilshanC/ceylonic/actions/workflows/ci.yml/badge.svg)](https://github.com/ChamathDilshanC/ceylonic/actions/workflows/ci.yml)
 [![npm version](https://img.shields.io/npm/v/ceylonic.svg)](https://www.npmjs.com/package/ceylonic)
 [![npm downloads](https://img.shields.io/npm/dm/ceylonic.svg)](https://www.npmjs.com/package/ceylonic)
 [![license](https://img.shields.io/npm/l/ceylonic.svg)](./LICENSE)
