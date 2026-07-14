@@ -1,0 +1,101 @@
+{
+  "name": "ceylonic",
+  "version": "0.1.0",
+  "description": "Zero-dependency TypeScript utilities for Sri Lanka: NIC parsing/validation and Sinhala date, currency & number formatting",
+  "keywords": [
+    "sri-lanka",
+    "nic",
+    "sinhala",
+    "date",
+    "currency",
+    "formatting",
+    "validator",
+    "typescript"
+  ],
+  "homepage": "https://github.com/ceylonic/ceylonic#readme",
+  "bugs": {
+    "url": "https://github.com/ceylonic/ceylonic/issues"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/ceylonic/ceylonic.git"
+  },
+  "license": "MIT",
+  "author": "",
+  "sideEffects": false,
+  "type": "module",
+  "main": "./dist/index.cjs",
+  "module": "./dist/index.js",
+  "types": "./dist/index.d.ts",
+  "exports": {
+    ".": {
+      "import": {
+        "types": "./dist/index.d.ts",
+        "default": "./dist/index.js"
+      },
+      "require": {
+        "types": "./dist/index.d.cts",
+        "default": "./dist/index.cjs"
+      }
+    },
+    "./nic": {
+      "import": {
+        "types": "./dist/nic.d.ts",
+        "default": "./dist/nic.js"
+      },
+      "require": {
+        "types": "./dist/nic.d.cts",
+        "default": "./dist/nic.cjs"
+      }
+    },
+    "./format": {
+      "import": {
+        "types": "./dist/format.d.ts",
+        "default": "./dist/format.js"
+      },
+      "require": {
+        "types": "./dist/format.d.cts",
+        "default": "./dist/format.cjs"
+      }
+    },
+    "./package.json": "./package.json"
+  },
+  "files": [
+    "dist",
+    "README.md",
+    "LICENSE"
+  ],
+  "engines": {
+    "node": ">=18"
+  },
+  "scripts": {
+    "build": "tsup",
+    "dev": "tsup --watch",
+    "typecheck": "tsc --noEmit",
+    "test": "vitest run",
+    "test:watch": "vitest",
+    "test:coverage": "vitest run --coverage",
+    "lint": "eslint .",
+    "lint:fix": "eslint . --fix",
+    "format": "prettier --write .",
+    "format:check": "prettier --check .",
+    "changeset": "changeset",
+    "version": "changeset version",
+    "release": "npm run build && changeset publish",
+    "prepublishOnly": "npm run build",
+    "verify": "npm run typecheck && npm run lint && npm run test && npm run build"
+  },
+  "devDependencies": {
+    "@changesets/cli": "^2.27.10",
+    "@eslint/js": "^9.15.0",
+    "@types/node": "^26.1.1",
+    "@vitest/coverage-v8": "^2.1.5",
+    "eslint": "^9.15.0",
+    "eslint-config-prettier": "^9.1.0",
+    "prettier": "^3.3.3",
+    "tsup": "^8.3.5",
+    "typescript": "^5.6.3",
+    "typescript-eslint": "^8.15.0",
+    "vitest": "^2.1.5"
+  }
+}
