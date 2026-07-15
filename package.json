@@ -1,6 +1,6 @@
 {
   "name": "ceylonic",
-  "version": "0.1.1",
+  "version": "0.2.0",
   "description": "Zero-dependency TypeScript utilities for Sri Lanka: NIC, phone number, and vehicle registration parsing/validation, plus Sinhala date, currency & number formatting",
   "keywords": [
     "sri-lanka",
