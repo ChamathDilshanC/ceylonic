@@ -1,10 +1,12 @@
 {
   "name": "ceylonic",
   "version": "0.1.1",
-  "description": "Zero-dependency TypeScript utilities for Sri Lanka: NIC parsing/validation and Sinhala date, currency & number formatting",
+  "description": "Zero-dependency TypeScript utilities for Sri Lanka: NIC, phone number, and vehicle registration parsing/validation, plus Sinhala date, currency & number formatting",
   "keywords": [
     "sri-lanka",
     "nic",
+    "phone-number",
+    "vehicle-registration",
     "sinhala",
     "date",
     "currency",
@@ -56,6 +58,26 @@
       "require": {
         "types": "./dist/format.d.cts",
         "default": "./dist/format.cjs"
+      }
+    },
+    "./phone": {
+      "import": {
+        "types": "./dist/phone.d.ts",
+        "default": "./dist/phone.js"
+      },
+      "require": {
+        "types": "./dist/phone.d.cts",
+        "default": "./dist/phone.cjs"
+      }
+    },
+    "./vehicle": {
+      "import": {
+        "types": "./dist/vehicle.d.ts",
+        "default": "./dist/vehicle.js"
+      },
+      "require": {
+        "types": "./dist/vehicle.d.cts",
+        "default": "./dist/vehicle.cjs"
       }
     },
     "./package.json": "./package.json"

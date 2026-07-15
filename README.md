@@ -1,8 +1,9 @@
 # ceylonic 🇱🇰
 
-**Zero-dependency TypeScript utilities for Sri Lanka-specific data:** National
-Identity Card (NIC) parsing/validation, and Sinhala date, relative-time,
-currency, and number-to-words formatting.
+**Zero-dependency TypeScript utilities for Sri Lanka-specific data:**
+National Identity Card (NIC), phone number, and vehicle registration
+parsing/validation, plus Sinhala date, relative-time, currency, and
+number-to-words formatting.
 
 [![CI](https://github.com/ChamathDilshanC/ceylonic/actions/workflows/ci.yml/badge.svg)](https://github.com/ChamathDilshanC/ceylonic/actions/workflows/ci.yml)
 [![npm version](https://img.shields.io/npm/v/ceylonic.svg)](https://www.npmjs.com/package/ceylonic)
@@ -34,6 +35,17 @@ result back.
   - [convertToNewNIC](#converttonewnic)
   - [The Feb 29 Rule](#the-feb-29-rule)
   - [Recipe Validate a NIC in a Signup Form](#recipe-validate-a-nic-in-a-signup-form)
+- [Phone Number Toolkit](#phone-number-toolkit)
+  - [Understanding Sri Lankan Phone Numbers](#understanding-sri-lankan-phone-numbers)
+  - [parsePhoneNumber](#parsephonenumber)
+  - [isValidPhoneNumber](#isvalidphonenumber)
+  - [What This Does Not Do](#what-this-does-not-do)
+  - [Recipe Gate SMS OTP Delivery to Mobile Numbers](#recipe-gate-sms-otp-delivery-to-mobile-numbers)
+- [Vehicle Registration Toolkit](#vehicle-registration-toolkit)
+  - [Understanding Vehicle Registration Numbers](#understanding-vehicle-registration-numbers)
+  - [parseVehicleNumber](#parsevehiclenumber)
+  - [isValidVehicleNumber](#isvalidvehiclenumber)
+  - [Recipe Validate a Plate in a Booking Form](#recipe-validate-a-plate-in-a-booking-form)
 - [Sinhala Formatting Toolkit](#sinhala-formatting-toolkit)
   - [formatSinhalaDate](#formatsinhaladate)
   - [formatSinhalaRelative](#formatsinhalarelative)
@@ -65,14 +77,23 @@ government-specific leap-year quirk). `ceylonic` encapsulates that knowledge
 so you don't have to re-derive or re-verify it every time you touch a signup
 form, a KYC flow, or an admin dashboard.
 
-The second half of the library covers a different but related gap: rendering
-dates, relative time, currency, and numbers the way they're conventionally
+Two more everyday inputs get the same treatment: **phone numbers** under
+Sri Lanka's national numbering plan (`+94`, 9-digit national numbers,
+mobile vs. fixed-line classification), and **vehicle registration plates**
+in the current 2-3-letter + 4-digit format. Both are things every Sri
+Lankan form ends up validating sooner or later, and both are easy to get
+subtly wrong by hand (see [What This Does Not
+Do](#what-this-does-not-do) for exactly where `ceylonic` deliberately
+draws the line on each).
+
+The fourth piece covers a different but related gap: rendering dates,
+relative time, currency, and numbers the way they're conventionally
 written in **Sinhala**, so Sri Lankan-facing UIs don't have to hand-roll
 month-name tables and number-to-words logic from scratch.
 
-Both halves are pure functions — no `fetch`, no filesystem access, no global
-state. The same code runs identically in Node, a browser, a serverless
-function, or a test file.
+All four domains are pure functions — no `fetch`, no filesystem access, no
+global state. The same code runs identically in Node, a browser, a
+serverless function, or a test file.
 
 ## Features
 
@@ -80,31 +101,37 @@ function, or a test file.
 - ✅ **Strict TypeScript**, fully typed, no `any` in the public API
 - ✅ **Dual ESM + CommonJS builds** — works with `import` and `require()`
 - ✅ **Tree-shakeable** (`sideEffects: false`) and split into **subpath
-  imports** (`ceylonic/nic`, `ceylonic/format`) so you only ship the code you
-  actually use
+  imports** (`ceylonic/nic`, `ceylonic/phone`, `ceylonic/vehicle`,
+  `ceylonic/format`) so you only ship the code you actually use
 - ✅ **~100% test coverage**, including leap-year and boundary edge cases
   (95% threshold enforced in CI)
 - ✅ **100% offline** — every function is a synchronous, local computation;
   nothing is ever sent over the network
 - ✅ Works in **Node 18+**, modern bundlers (Vite, webpack, esbuild, Rollup),
   and directly in the browser
+- ✅ **Honest about scope** — where a domain has no single authoritative
+  specification to validate against (legacy vehicle plates, phone carrier
+  identification), `ceylonic` says so explicitly instead of guessing
 
 ## At a Glance
 
-A quick reference for every exported function. Full docs for each are linked
-in the [NIC Toolkit](#nic-toolkit) and [Sinhala Formatting
-Toolkit](#sinhala-formatting-toolkit) sections below.
+A quick reference for every exported function. Full docs for each are
+linked in the toolkit sections below.
 
-| Function                                          | Import from                   | What it does                                              | On bad input                      |
-| ------------------------------------------------- | ----------------------------- | --------------------------------------------------------- | --------------------------------- |
-| [`parseNIC`](#parsenic)                           | `ceylonic`, `ceylonic/nic`    | Parses an old- or new-format NIC into a structured result | Returns `{ valid: false, error }` |
-| [`isValidNIC`](#isvalidnic)                       | `ceylonic`, `ceylonic/nic`    | Quick `true`/`false` validity check                       | Returns `false`                   |
-| [`convertToNewNIC`](#converttonewnic)             | `ceylonic`, `ceylonic/nic`    | Converts an old-format NIC to the new 12-digit format     | Returns `null`                    |
-| [`formatSinhalaDate`](#formatsinhaladate)         | `ceylonic`, `ceylonic/format` | Formats a `Date` in Sinhala                               | Throws `TypeError`                |
-| [`formatSinhalaRelative`](#formatsinhalarelative) | `ceylonic`, `ceylonic/format` | `"3 hours ago"`-style Sinhala relative time               | Throws `TypeError`                |
-| [`formatRupees`](#formatrupees)                   | `ceylonic`, `ceylonic/format` | Formats a number as Sri Lankan Rupees                     | Throws `TypeError` / `RangeError` |
-| [`numberToSinhalaWords`](#numbertosinhalawords)   | `ceylonic`, `ceylonic/format` | Converts an integer to Sinhala words                      | Throws `RangeError`               |
-| `SINHALA_MONTHS`, `SINHALA_WEEKDAYS`              | `ceylonic`, `ceylonic/format` | Lookup constants for month/weekday names                  | —                                 |
+| Function                                          | Import from                    | What it does                                                   | On bad input                      |
+| ------------------------------------------------- | ------------------------------ | -------------------------------------------------------------- | --------------------------------- |
+| [`parseNIC`](#parsenic)                           | `ceylonic`, `ceylonic/nic`     | Parses an old- or new-format NIC into a structured result      | Returns `{ valid: false, error }` |
+| [`isValidNIC`](#isvalidnic)                       | `ceylonic`, `ceylonic/nic`     | Quick `true`/`false` validity check                            | Returns `false`                   |
+| [`convertToNewNIC`](#converttonewnic)             | `ceylonic`, `ceylonic/nic`     | Converts an old-format NIC to the new 12-digit format          | Returns `null`                    |
+| [`parsePhoneNumber`](#parsephonenumber)           | `ceylonic`, `ceylonic/phone`   | Parses a Sri Lankan phone number into a structured result      | Returns `{ valid: false, error }` |
+| [`isValidPhoneNumber`](#isvalidphonenumber)       | `ceylonic`, `ceylonic/phone`   | Quick `true`/`false` validity check                            | Returns `false`                   |
+| [`parseVehicleNumber`](#parsevehiclenumber)       | `ceylonic`, `ceylonic/vehicle` | Parses a current-format vehicle plate into a structured result | Returns `{ valid: false, error }` |
+| [`isValidVehicleNumber`](#isvalidvehiclenumber)   | `ceylonic`, `ceylonic/vehicle` | Quick `true`/`false` validity check                            | Returns `false`                   |
+| [`formatSinhalaDate`](#formatsinhaladate)         | `ceylonic`, `ceylonic/format`  | Formats a `Date` in Sinhala                                    | Throws `TypeError`                |
+| [`formatSinhalaRelative`](#formatsinhalarelative) | `ceylonic`, `ceylonic/format`  | `"3 hours ago"`-style Sinhala relative time                    | Throws `TypeError`                |
+| [`formatRupees`](#formatrupees)                   | `ceylonic`, `ceylonic/format`  | Formats a number as Sri Lankan Rupees                          | Throws `TypeError` / `RangeError` |
+| [`numberToSinhalaWords`](#numbertosinhalawords)   | `ceylonic`, `ceylonic/format`  | Converts an integer to Sinhala words                           | Throws `RangeError`               |
+| `SINHALA_MONTHS`, `SINHALA_WEEKDAYS`              | `ceylonic`, `ceylonic/format`  | Lookup constants for month/weekday names                       | —                                 |
 
 ## Installation
 
@@ -133,18 +160,20 @@ types are bundled in the package itself, so there's no separate
 ## Quick Start
 
 ```ts
-import { parseNIC, formatRupees, formatSinhalaDate } from "ceylonic";
+import { parseNIC, parsePhoneNumber, parseVehicleNumber, formatRupees } from "ceylonic";
 
 // 1. Decode a NIC
 const person = parseNIC("853400070V");
 console.log(person.birthdayISO); // "1985-12-05"
-console.log(person.gender); // "male"
 
-// 2. Format a currency amount
+// 2. Validate & classify a phone number
+console.log(parsePhoneNumber("0771234567").type); // "mobile"
+
+// 3. Validate & normalize a vehicle plate
+console.log(parseVehicleNumber("cab 1234").formatted); // "CAB-1234"
+
+// 4. Format a currency amount
 console.log(formatRupees(1_575_000.5)); // "රු. 1,575,000.50"
-
-// 3. Format a date in Sinhala
-console.log(formatSinhalaDate(new Date(2026, 6, 14))); // "2026 ජූලි 14"
 ```
 
 Prefer smaller bundles? Import only the domain you need — see [How ceylonic
@@ -152,15 +181,18 @@ Is Organized](#how-ceylonic-is-organized) below.
 
 ```ts
 import { parseNIC } from "ceylonic/nic"; // NIC code only
+import { parsePhoneNumber } from "ceylonic/phone"; // phone code only
+import { parseVehicleNumber } from "ceylonic/vehicle"; // vehicle code only
 import { formatRupees } from "ceylonic/format"; // Sinhala formatting code only
 ```
 
 ## How ceylonic Is Organized
 
-`ceylonic` is split into two independent domains that never import from each
-other, plus a root entry point that re-exports both for convenience. This
-means a backend that only validates NICs never pulls in Sinhala month tables,
-and a frontend that only formats currency never pulls in NIC-parsing logic.
+`ceylonic` is split into four independent domains that never import from
+each other, plus a root entry point that re-exports all of them for
+convenience. This means a backend that only validates NICs never pulls in
+Sinhala month tables, and a frontend that only formats currency never
+pulls in phone-parsing logic.
 
 ```mermaid
 graph TD
@@ -168,22 +200,30 @@ graph TD
         APP[Your Code]
     end
     subgraph Pkg["ceylonic package"]
-        ROOT["ceylonic (root)\nre-exports both domains"]
+        ROOT["ceylonic (root)\nre-exports all four domains"]
         NIC["ceylonic/nic\nparseNIC, isValidNIC,\nconvertToNewNIC"]
+        PHONE["ceylonic/phone\nparsePhoneNumber,\nisValidPhoneNumber"]
+        VEHICLE["ceylonic/vehicle\nparseVehicleNumber,\nisValidVehicleNumber"]
         FMT["ceylonic/format\nformatSinhalaDate, formatRupees,\nnumberToSinhalaWords, ..."]
     end
     APP -->|"import { parseNIC, formatRupees }"| ROOT
     APP -->|"import { parseNIC }\n(smallest NIC-only bundle)"| NIC
+    APP -->|"import { parsePhoneNumber }\n(smallest phone-only bundle)"| PHONE
+    APP -->|"import { parseVehicleNumber }\n(smallest vehicle-only bundle)"| VEHICLE
     APP -->|"import { formatRupees }\n(smallest format-only bundle)"| FMT
     ROOT -.re-exports.-> NIC
+    ROOT -.re-exports.-> PHONE
+    ROOT -.re-exports.-> VEHICLE
     ROOT -.re-exports.-> FMT
 ```
 
-| Import path       | Pulls into your bundle                       | Best for                                                    |
-| ----------------- | -------------------------------------------- | ----------------------------------------------------------- |
-| `ceylonic`        | Both NIC and Sinhala-formatting code         | Apps that use both domains and don't mind the combined size |
-| `ceylonic/nic`    | Only NIC parsing/validation logic            | Backends, forms, and KYC flows that only validate NICs      |
-| `ceylonic/format` | Only Sinhala date/currency/number formatting | UIs that only need Sinhala display formatting               |
+| Import path        | Pulls into your bundle                       | Best for                                                       |
+| ------------------ | -------------------------------------------- | -------------------------------------------------------------- |
+| `ceylonic`         | All four domains                             | Apps that use several domains and don't mind the combined size |
+| `ceylonic/nic`     | Only NIC parsing/validation logic            | Backends, forms, and KYC flows that only validate NICs         |
+| `ceylonic/phone`   | Only phone number parsing/validation logic   | Signup/checkout forms, OTP delivery gating                     |
+| `ceylonic/vehicle` | Only vehicle plate parsing/validation logic  | Rental, insurance, and parking booking forms                   |
+| `ceylonic/format`  | Only Sinhala date/currency/number formatting | UIs that only need Sinhala display formatting                  |
 
 ## From Install to Output
 
@@ -212,13 +252,13 @@ is the first line that returns a usable result.
 ## Error Handling Philosophy
 
 This is the one design decision worth understanding before you write code
-against `ceylonic`, because it's **different between the two modules on
-purpose**:
+against `ceylonic`, because it's **different depending on where the data
+came from**:
 
 ```mermaid
 flowchart LR
-    subgraph NIC["ceylonic/nic — data comes from users"]
-        N1["Untrusted input\n(a form field, a file upload, OCR output)"] --> N2["parseNIC / isValidNIC"]
+    subgraph DATA["ceylonic/nic, ceylonic/phone, ceylonic/vehicle — data comes from users"]
+        N1["Untrusted input\n(a form field, a file upload, OCR output)"] --> N2["parseNIC / parsePhoneNumber /\nparseVehicleNumber"]
         N2 --> N3["Always returns an object\n{ valid: true | false, error, ... }"]
     end
     subgraph FMT["ceylonic/format — arguments come from your code"]
@@ -227,11 +267,13 @@ flowchart LR
     end
 ```
 
-- **`ceylonic/nic` never throws for malformed NIC input.** A NIC string
-  almost always originates from a human (a signup form, a scanned document,
-  a CSV import) — malformed input is an expected, everyday case, not a bug.
-  `parseNIC` always returns a result object; check `result.valid` and
-  `result.error` instead of wrapping calls in `try/catch`.
+- **`ceylonic/nic`, `ceylonic/phone`, and `ceylonic/vehicle` never throw
+  for malformed input.** A NIC, phone number, or plate string almost
+  always originates from a human (a signup form, a scanned document, a
+  CSV import) — malformed input is an expected, everyday case, not a bug.
+  These `parse*` functions always return a result object; check
+  `result.valid` and `result.error` instead of wrapping calls in
+  `try/catch`.
 - **`ceylonic/format` throws for bad arguments.** A `Date` object, a number,
   or an options object here is something _your code_ constructed — there's
   no "user input" to gracefully degrade. An invalid `Date` or a negative
@@ -240,7 +282,7 @@ flowchart LR
   producing a wrong-looking string.
 
 This split is deliberate and documented in
-[ARCHITECTURE.md](./ARCHITECTURE.md#6-design-decisions--tradeoffs) — please
+[ARCHITECTURE.md](./ARCHITECTURE.md#8-design-decisions--tradeoffs) — please
 don't blur it in either direction in a PR without discussing it first.
 
 ## NIC Toolkit
@@ -446,6 +488,237 @@ validateSignupForm("not-a-nic");
 // { ok: false, message: "Invalid NIC format. Expected 9 digits + V/X (old) or 12 digits (new)." }
 ```
 
+## Phone Number Toolkit
+
+### Understanding Sri Lankan Phone Numbers
+
+Sri Lanka's national numbering plan (country code `+94`) always has a
+**9-digit national number** made of a 2-digit prefix followed by a 7-digit
+subscriber number. The prefix's first digit tells you the type: `7` means
+mobile, anything else is a fixed-line area code.
+
+```
++94   77    1234567
+ │    │        │
+ │    │        └── 7-digit subscriber number
+ │    └──────────── 2-digit prefix: "7x" = mobile, anything else = fixed-line area code
+ └───────────────── country code (always 94 when valid)
+```
+
+`parsePhoneNumber` accepts every common way people actually type this
+number, and normalizes them all to the same result:
+
+| You type        | Shape                          |
+| --------------- | ------------------------------ |
+| `0771234567`    | Local, with trunk `0`          |
+| `077 123 4567`  | Local, with spaces             |
+| `+94771234567`  | International, with `+`        |
+| `94771234567`   | International, bare (no `+`)   |
+| `0094771234567` | International, IDD `00` prefix |
+| `771234567`     | Bare 9-digit national number   |
+
+### parsePhoneNumber
+
+**Signature:** `parsePhoneNumber(phone: string): PhoneResult`
+
+```mermaid
+flowchart TD
+    A["Raw input string\ne.g. '077 123 4567'"] --> B["Strip whitespace/hyphens"]
+    B --> C{"Which prefix shape?\n+94 / 0094 / bare 94+11 digits /\n0+10 digits / bare 9 digits"}
+    C -->|"None match"| Z1["valid: false\nerror: format message"]
+    C -->|"Matched"| D["Strip the matched prefix,\nleaving candidate digits"]
+    D --> E{"Exactly 9 digits,\nnot starting with 0?"}
+    E -->|"No"| Z2["valid: false\nerror: digit-count message"]
+    E -->|"Yes"| F{"First digit of the\n2-digit prefix is 7?"}
+    F -->|"Yes"| G1["type = mobile"]
+    F -->|"No"| G2["type = fixed"]
+    G1 --> H["Build formatted /\nformattedLocal / e164"]
+    G2 --> H
+    H --> I["valid: true\nfull result object"]
+```
+
+```ts
+import { parsePhoneNumber } from "ceylonic/phone";
+
+parsePhoneNumber("077 123 4567");
+// {
+//   valid: true,
+//   type: "mobile",
+//   countryCode: "94",
+//   nationalNumber: "771234567",
+//   prefix: "77",
+//   subscriberNumber: "1234567",
+//   formatted: "+94 77 123 4567",
+//   formattedLocal: "077 123 4567",
+//   e164: "+94771234567",
+//   error: null,
+// }
+
+parsePhoneNumber("011-2345678").type; // "fixed"
+
+// Invalid input never throws — check `valid` / `error` instead
+parsePhoneNumber("not-a-number").valid; // false
+```
+
+Every field in the returned `PhoneResult`:
+
+| Field              | Type                          | Description                                                         |
+| ------------------ | ----------------------------- | ------------------------------------------------------------------- |
+| `valid`            | `boolean`                     | Whether the input was a syntactically valid Sri Lankan phone number |
+| `type`             | `"mobile" \| "fixed" \| null` | Classified from the `7x` reserved mobile block                      |
+| `countryCode`      | `string \| null`              | Always `"94"` when valid                                            |
+| `nationalNumber`   | `string \| null`              | The 9-digit national significant number                             |
+| `prefix`           | `string \| null`              | The first 2 digits of the national number                           |
+| `subscriberNumber` | `string \| null`              | The remaining 7 digits                                              |
+| `formatted`        | `string \| null`              | International format, e.g. `"+94 77 123 4567"`                      |
+| `formattedLocal`   | `string \| null`              | Local format, e.g. `"077 123 4567"`                                 |
+| `e164`             | `string \| null`              | Compact E.164 format, e.g. `"+94771234567"`                         |
+| `error`            | `string \| null`              | Human-readable reason parsing failed, or `null` if valid            |
+
+### isValidPhoneNumber
+
+**Signature:** `isValidPhoneNumber(phone: string): boolean`
+
+```ts
+import { isValidPhoneNumber } from "ceylonic/phone";
+
+isValidPhoneNumber("0771234567"); // true
+isValidPhoneNumber("123"); // false
+```
+
+### What This Does Not Do
+
+`parsePhoneNumber` validates the **structural shape** of the number — it
+deliberately does not:
+
+- **Identify a network operator** (Dialog/Mobitel/Hutch/etc.). Those
+  mappings shift with mergers and acquisitions; baking one in would go
+  stale silently. `type` only distinguishes mobile from fixed-line, which
+  is a stable structural fact.
+- **Map an area code to a city** (e.g. `011` → Colombo). `prefix` is
+  exposed as raw digits so you can do this lookup yourself against a
+  table you trust.
+- **Recognize short codes** (`1919`, `1900`, etc.) — a different numbering
+  space than ordinary subscriber numbers.
+
+See [ARCHITECTURE.md
+§5](./ARCHITECTURE.md#5-domain-knowledge-phone-numbers) for the full
+reasoning.
+
+### Recipe: Gate SMS OTP Delivery to Mobile Numbers
+
+```ts
+import { parsePhoneNumber } from "ceylonic/phone";
+
+function canReceiveSmsOtp(phoneInput: string) {
+  const result = parsePhoneNumber(phoneInput);
+
+  if (!result.valid) {
+    return { ok: false, message: result.error };
+  }
+  if (result.type !== "mobile") {
+    return { ok: false, message: "SMS OTP requires a mobile number." };
+  }
+
+  return { ok: true, sendTo: result.e164 };
+}
+
+canReceiveSmsOtp("0771234567");
+// { ok: true, sendTo: "+94771234567" }
+
+canReceiveSmsOtp("0112345678");
+// { ok: false, message: "SMS OTP requires a mobile number." }
+```
+
+## Vehicle Registration Toolkit
+
+### Understanding Vehicle Registration Numbers
+
+`ceylonic` validates the **current** Sri Lankan plate format, issued since
+letter-prefix combinations were widened around 2011: 2 or 3 uppercase
+letters followed by exactly 4 digits.
+
+```
+CAB   -   1234
+ │        │
+ │        └── 4-digit serial (just a serial — no further meaning decoded)
+ └─────────── 2-3 letter administrative series (no province/vehicle-class
+              meaning under the current scheme — see below)
+```
+
+> **Scope note:** older/legacy plate formats (shorter letter prefixes,
+> historical province-letter series) are intentionally **not** recognized.
+> There is no single authoritative public specification for those older
+> formats to validate against, and `ceylonic` would rather return
+> `valid: false` for an unsupported legacy plate than guess at a rule it
+> can't verify. See [ARCHITECTURE.md
+> §6](./ARCHITECTURE.md#6-domain-knowledge-vehicle-registration-numbers)
+> for the full reasoning.
+
+### parseVehicleNumber
+
+**Signature:** `parseVehicleNumber(plate: string): VehicleResult`
+
+```mermaid
+flowchart TD
+    A["Raw input string\ne.g. 'cab 1234'"] --> B["Normalize:\ntrim, uppercase, strip spaces/hyphens"]
+    B --> C{"Matches 2-3 letters\n+ exactly 4 digits?"}
+    C -->|"No"| Z1["valid: false\nerror: format message"]
+    C -->|"Yes"| D["Split into letters + digits"]
+    D --> E["valid: true\nformatted = LETTERS-DIGITS"]
+```
+
+```ts
+import { parseVehicleNumber } from "ceylonic/vehicle";
+
+parseVehicleNumber("cab-1234");
+// { valid: true, letters: "CAB", digits: "1234", formatted: "CAB-1234", error: null }
+
+// Invalid input never throws — check `valid` / `error` instead
+parseVehicleNumber("N-123"); // older/legacy formats are out of scope
+// { valid: false, error: "Invalid vehicle registration format. ...", ...rest: null }
+```
+
+Every field in the returned `VehicleResult`:
+
+| Field       | Type             | Description                                               |
+| ----------- | ---------------- | --------------------------------------------------------- |
+| `valid`     | `boolean`        | Whether the input matched the current registration format |
+| `letters`   | `string \| null` | The 2-3 letter prefix, uppercased                         |
+| `digits`    | `string \| null` | The 4-digit serial                                        |
+| `formatted` | `string \| null` | Normalized `"LETTERS-DIGITS"` form, e.g. `"CAB-1234"`     |
+| `error`     | `string \| null` | Human-readable reason parsing failed, or `null` if valid  |
+
+### isValidVehicleNumber
+
+**Signature:** `isValidVehicleNumber(plate: string): boolean`
+
+```ts
+import { isValidVehicleNumber } from "ceylonic/vehicle";
+
+isValidVehicleNumber("CAB-1234"); // true
+isValidVehicleNumber("N-123"); // false — legacy format, out of scope
+```
+
+### Recipe: Validate a Plate in a Booking Form
+
+```ts
+import { parseVehicleNumber } from "ceylonic/vehicle";
+
+function validateVehiclePlate(plateInput: string) {
+  const result = parseVehicleNumber(plateInput);
+
+  if (!result.valid) {
+    return { ok: false, message: result.error };
+  }
+
+  return { ok: true, plate: result.formatted };
+}
+
+validateVehiclePlate("cab 1234");
+// { ok: true, plate: "CAB-1234" }
+```
+
 ## Sinhala Formatting Toolkit
 
 ### formatSinhalaDate
@@ -496,7 +769,7 @@ formatSinhalaRelative(inTwoDays); // "දින 2කින්"
 
 Uses fixed-width buckets (minute/hour/day/month≈30d/year≈365d) rather than
 calendar-aware arithmetic — see
-[ARCHITECTURE.md](./ARCHITECTURE.md#6-design-decisions--tradeoffs) for why
+[ARCHITECTURE.md](./ARCHITECTURE.md#8-design-decisions--tradeoffs) for why
 that tradeoff rarely changes the displayed bucket in practice.
 
 ### formatRupees
@@ -540,7 +813,7 @@ numberToSinhalaWords(0); // "බිංදුව"
 
 Supports integers `0` to `999,999,999`; throws `RangeError` outside that
 range or for non-integers. See
-[ARCHITECTURE.md §5](./ARCHITECTURE.md#5-domain-knowledge-sinhala-formatting-conventions)
+[ARCHITECTURE.md §7](./ARCHITECTURE.md#7-domain-knowledge-sinhala-formatting-conventions)
 for the compounding rules this follows (why some parts fuse together with no
 space, and others don't).
 
@@ -600,12 +873,16 @@ the same documentation as this README.
 
 - **~100% test coverage**, with a 95% enforced threshold
   (statements/branches/functions/lines) in `vitest.config.ts`
-- Tests cover happy paths, boundary values (day codes, word-conversion
-  limits), domain-specific invariants (the Feb-29 rule, gender offsets,
-  old↔new serial round-tripping), and error-handling policy conformance
+- Tests cover happy paths, boundary values (NIC day codes, phone
+  digit-count boundaries, plate letter/digit-count boundaries,
+  word-conversion limits), domain-specific invariants (the NIC Feb-29
+  rule, the phone `7x` mobile/fixed split, old↔new NIC serial
+  round-tripping), and error-handling policy conformance — one test file
+  per domain (`test/nic.test.ts`, `test/phone.test.ts`,
+  `test/vehicle.test.ts`, `test/format.test.ts`)
 - Every PR runs typecheck, lint, format-check, test+coverage, and build in
   CI before merge — see
-  [ARCHITECTURE.md §7](./ARCHITECTURE.md#7-data-flow-diagrams) for the full
+  [ARCHITECTURE.md §9](./ARCHITECTURE.md#9-data-flow-diagrams) for the full
   CI/release pipeline diagram
 - Releases are managed through [Changesets](https://github.com/changesets/changesets) —
   every user-facing change ships with a changelog entry
@@ -628,19 +905,34 @@ It produces a _structurally plausible_ one — correct year/day-code/serial,
 but the inserted marker digit is not a documented checksum. Don't present its
 output as an officially-issued NIC; treat it as a display/lookup convenience.
 
+**Does `parsePhoneNumber` tell me which network a number is on?**
+No, on purpose — see [What This Does Not Do](#what-this-does-not-do).
+Operator-to-prefix mappings shift with mergers and acquisitions, so
+`ceylonic` only classifies `mobile` vs. `fixed`, which is a stable
+structural fact, not a specific carrier.
+
+**Why does `isValidVehicleNumber("N-123")` return `false`? Isn't that a
+real plate?**
+It may well be a real _legacy_ plate, but `ceylonic` only validates the
+current (2011-onward) 2-3-letter + 4-digit format — see [Understanding
+Vehicle Registration Numbers](#understanding-vehicle-registration-numbers).
+Older formats are intentionally unsupported rather than guessed at.
+
 **Can I use this in React, Vue, Next.js, or a plain browser script?**
 Yes. Zero runtime dependencies and no Node-only APIs — see [Runtime
 Compatibility](#runtime-compatibility).
 
-**Is any of my data (NIC numbers, amounts, dates) sent anywhere?**
-No. Every function is a synchronous, local computation. There is no `fetch`,
-no analytics, no telemetry anywhere in the package.
+**Is any of my data (NIC numbers, phone numbers, plates, amounts, dates)
+sent anywhere?**
+No. Every function is a synchronous, local computation. There is no
+`fetch`, no analytics, no telemetry anywhere in the package.
 
 **Do I need to install `@types/ceylonic`?**
 No — TypeScript types are built into the package itself.
 
 **What Sri Lankan formats aren't covered here?**
-Full Sinhala transliteration/grammar and a general-purpose i18n layer are
+Full Sinhala transliteration/grammar, a general-purpose i18n layer, legacy
+vehicle plate formats, and phone carrier/short-code identification are
 explicitly out of scope — see
 [ARCHITECTURE.md §1](./ARCHITECTURE.md#1-purpose--scope) for the library's
 intended boundaries.
@@ -656,8 +948,9 @@ npm run verify   # typecheck + lint + test + build
 
 See [CONTRIBUTING.md](./CONTRIBUTING.md) for the full setup, PR checklist,
 and code-style rules, and [ARCHITECTURE.md](./ARCHITECTURE.md) for how the
-codebase is organized, the full domain knowledge behind the NIC encoding and
-Sinhala formatting rules, and the recipe for adding a new module.
+codebase is organized, the full domain knowledge behind the NIC, phone, and
+vehicle encoding rules and Sinhala formatting conventions, and the recipe
+for adding a new module.
 
 ## License
 

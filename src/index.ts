@@ -17,3 +17,9 @@ export {
   SINHALA_WEEKDAYS,
 } from "./format";
 export type { SinhalaDateOptions, CurrencyOptions } from "./format";
+
+export { parsePhoneNumber, isValidPhoneNumber } from "./phone";
+export type { PhoneResult } from "./phone";
+
+export { parseVehicleNumber, isValidVehicleNumber } from "./vehicle";
+export type { VehicleResult } from "./vehicle";

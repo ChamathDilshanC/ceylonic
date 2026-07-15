@@ -5,6 +5,8 @@ export default defineConfig({
     index: "src/index.ts",
     nic: "src/nic.ts",
     format: "src/format.ts",
+    phone: "src/phone.ts",
+    vehicle: "src/vehicle.ts",
   },
   format: ["esm", "cjs"],
   dts: true,
