@@ -64,7 +64,10 @@ function invalid(error: string): VehicleResult {
 export function parseVehicleNumber(plate: string): VehicleResult {
   if (typeof plate !== "string") return invalid("Vehicle number must be a string");
 
-  const cleaned = plate.trim().toUpperCase().replace(/[\s-]+/g, "");
+  const cleaned = plate
+    .trim()
+    .toUpperCase()
+    .replace(/[\s-]+/g, "");
   const match = /^([A-Z]{2,3})(\d{4})$/.exec(cleaned);
   if (!match) {
     return invalid(

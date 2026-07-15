@@ -113,7 +113,9 @@ export function parsePhoneNumber(phone: string): PhoneResult {
   }
 
   if (!/^[1-9]\d{8}$/.test(digits)) {
-    return invalid("Invalid phone number: expected exactly 9 digits after the country/trunk prefix");
+    return invalid(
+      "Invalid phone number: expected exactly 9 digits after the country/trunk prefix",
+    );
   }
 
   const prefix = digits.slice(0, 2);
