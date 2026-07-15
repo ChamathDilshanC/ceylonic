@@ -7,7 +7,6 @@ currency, and number-to-words formatting.
 [![CI](https://github.com/ChamathDilshanC/ceylonic/actions/workflows/ci.yml/badge.svg)](https://github.com/ChamathDilshanC/ceylonic/actions/workflows/ci.yml)
 [![npm version](https://img.shields.io/npm/v/ceylonic.svg)](https://www.npmjs.com/package/ceylonic)
 [![npm downloads](https://img.shields.io/npm/dm/ceylonic.svg)](https://www.npmjs.com/package/ceylonic)
-[![bundle size](https://img.shields.io/bundlephobia/minzip/ceylonic)](https://bundlephobia.com/package/ceylonic)
 [![license](https://img.shields.io/npm/l/ceylonic.svg)](./LICENSE)
 [![types](https://img.shields.io/npm/types/ceylonic.svg)](./src)
 [![PRs welcome](https://img.shields.io/badge/PRs-welcome-brightgreen.svg)](./CONTRIBUTING.md)
