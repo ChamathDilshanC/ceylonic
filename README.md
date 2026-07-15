@@ -1,4 +1,4 @@
-# ceylonic 🇱🇰
+# ceylonic 🇱🇰 ✅
 
 **Zero-dependency TypeScript utilities for Sri Lanka-specific data:**
 National Identity Card (NIC), phone number, and vehicle registration
